@@ -33,7 +33,16 @@ def get_chat_response(messages, model="Qwen3-8B"):
         result = response.json()
         reasoning_content = result['choices'][0]['message']['reasoning_content']
         content = result['choices'][0]['message']['content']
-        return {"reasoning_content":reasoning_content, "content":content}
+        # 记录tokens消耗
+        prompt_tokens = result["usage"]["prompt_tokens"]
+        completion_tokens = result["usage"]["completion_tokens"]
+        total_tokens = result["usage"]["total_tokens"]
+        token_cost = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens
+        }
+        return {"reasoning_content":reasoning_content, "content":content, "token_cost":token_cost}
     else:
         print(f"请求失败，状态码：{response.status_code}")
         print(f"错误信息：{response.text}")
