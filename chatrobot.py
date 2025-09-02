@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # from utils.chatRobot_utils import get_chat_response
 from utils.request_utils import get_chat_response
 
-st.title("💭Make a life")
+st.title("💭Make a life：ChatRobot")
 
 if "history" not in st.session_state:
     st.session_state["history"] = [{"role": "assistant", "content": "我是你的AI助手，有什么可以帮你的吗？"}]
@@ -30,7 +30,7 @@ for i, message in enumerate(st.session_state["history"]):
     if message["role"] == "assistant":
         token_used = st.session_state["token_cost"][i]
         if token_used is not None:
-            st.caption(f"tokens消耗: {token_used}")
+            st.caption(f"tokens消耗: {token_used[0]}, 推理时间: {token_used[1]}秒")
 
 prompt = st.chat_input("给AI发送消息")
 model = st.selectbox("模型选择", ["Qwen3-8B", "deepseek-R1-Distillation"])
@@ -44,10 +44,16 @@ if prompt:
     st.chat_message("user").write(prompt)
     with st.spinner("AI思考中..."):
         # AI回答
+        # 记录开始时间
+        start_time = datetime.now()
         response = get_chat_response(st.session_state["history"], model)
+        end_time = datetime.now()
+        # 计算推理时间
+        think_time = (end_time - start_time).total_seconds()
         think_content = response["reasoning_content"]
         clean_response = response["content"]
-        token_cost = response["token_cost"]["total_tokens"]
+        # 记录token消耗与推理时间
+        token_cost = (response["token_cost"]["total_tokens"], think_time)
         # 处理思考过程
         st.session_state["think_history"].append(think_content)
         if think_content:
@@ -61,7 +67,7 @@ if prompt:
         st.chat_message("assistant").write(clean_response)
         # 记录token消耗
         st.session_state["token_cost"].append(token_cost)
-        st.caption(f"tokens消耗: {token_cost}")
+        st.caption(f"tokens消耗: {token_cost[0]}, 推理时间: {token_cost[1]}秒")
 
 
 
