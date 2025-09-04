@@ -35,7 +35,7 @@ for i, message in enumerate(st.session_state["history"]):
 prompt = st.chat_input("给AI发送消息")
 model = st.selectbox("模型选择", ["Qwen3-8B", "deepseek-R1-Distillation"])
 # 添加开关组件
-# enable_thinking = st.toggle("开启思考功能", value=False)
+enable_search = st.toggle("联网搜索", value=False)
 if prompt:
     # 新增用户消息
     st.session_state["history"].append({"role": "user", "content": prompt})
@@ -46,7 +46,7 @@ if prompt:
         # AI回答
         # 记录开始时间
         start_time = datetime.now()
-        response = get_chat_response(st.session_state["history"], model)
+        response = get_chat_response(st.session_state["history"], model, enable_search)
         end_time = datetime.now()
         # 计算推理时间
         think_time = (end_time - start_time).total_seconds()

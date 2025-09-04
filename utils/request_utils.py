@@ -3,7 +3,7 @@ import json
 import os
 
 
-def get_chat_response(messages, model="Qwen3-8B"):
+def get_chat_response(messages, model="Qwen3-8B", enable_search=False):
     api_key = os.getenv("SILICONFLOW_API_KEY")
 
     print(messages)
@@ -17,14 +17,20 @@ def get_chat_response(messages, model="Qwen3-8B"):
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
     }
-
+    # 如果支持联网搜索，就先进行搜索，再修改一下prompt。
+    if enable_search:
+        from utils.agent_utils import tavily_search
+        search_resutls = tavily_search(messages[-1]["content"])
+        result = json.dumps(search_resutls["results"], ensure_ascii=False)
+        # 更新messages，引用将同时修改session.state
+        messages[-1]["content"] = messages[-1]["content"]+"\n请根据以下检索的网页内容进行回答："+result
+        # messages.append({'role':"assistant", 'content':'我已经检索到以下相关网页内容，我将根据这些内容回答用户的问题：'+result})
     # 构建请求数据，注意模型名称要写对
     data = {
         "model": model_map[model],  # 或你使用的其他GLM3模型名称
         "messages": messages,
         "temperature": 0.5
     }
-
     # 发送POST请求
     response = requests.post(url, headers=headers, data=json.dumps(data))
 
@@ -32,6 +38,7 @@ def get_chat_response(messages, model="Qwen3-8B"):
     if response.status_code == 200:
         result = response.json()
         reasoning_content = result['choices'][0]['message']['reasoning_content']
+
         content = result['choices'][0]['message']['content']
         # 记录tokens消耗
         prompt_tokens = result["usage"]["prompt_tokens"]
