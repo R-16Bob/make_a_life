@@ -4,6 +4,11 @@ import os
 import json
 from datetime import datetime
 
+# 添加用于管理初始提示词的目录
+INIT_PROMPTS_DIR = "init_prompts"
+if not os.path.exists(INIT_PROMPTS_DIR):
+    os.makedirs(INIT_PROMPTS_DIR)
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.request_utils import get_chat_response,get_clean_history
 
@@ -15,6 +20,92 @@ if "history" not in st.session_state:
         "role": "assistant",
         "content": "我是你的AI助手，有什么可以帮你的吗？",
         "timestamp":datetime.now().strftime("%Y%m%d_%H%M%S")}]
+
+# 新增：配置初始提示词侧边栏
+with st.sidebar:
+    st.header("初始提示词设置")
+    # 加载并立即清理临时状态
+    # temp_role = st.session_state.get("temp_role", None)
+    temp_content = st.session_state.get("temp_content", None)
+    # # 确定默认角色
+    # if temp_role is not None:
+    #     default_role = temp_role
+    # else:
+    #     default_role = st.session_state["history"][0]["role"]
+
+    # st.session_state["index"] = 0 if default_role == "system" else 1
+
+    # 确定默认内容
+    if temp_content is not None:
+        default_content = temp_content
+    else:
+        default_content = st.session_state["history"][0]["content"]
+
+    # 角色选择
+    if st.session_state.get("init_prompt_role") is None:
+        init_role = st.radio(
+            "选择初始提示词角色",
+            ["system", "assistant"],
+            index=0,
+        )
+    else:
+        init_role = st.radio(
+            "选择初始提示词角色",
+            ["system", "assistant"],
+            index=st.session_state["index"]
+        )
+
+    # 初始提示词文本框
+    init_content = st.text_area(
+        "初始提示词内容",
+        value=default_content,
+        height=200,
+        # key="init_prompt_content"
+    )
+
+    # 已保存提示词下拉框
+    st.subheader("保存的提示词")
+    saved_files = [f for f in os.listdir(INIT_PROMPTS_DIR) if f.endswith(".json")]
+    selected_file = st.selectbox(
+        "选择已保存的提示词",
+        [""] + saved_files,  # 列表第一位为空，用于添加自定义提示词
+        index=0
+    )
+
+    # 加载选中的提示词
+    if selected_file:
+        if st.button("加载选中的提示词"):
+            with open(os.path.join(INIT_PROMPTS_DIR, selected_file), "r", encoding="utf-8") as f:
+                data = json.load(f)
+                st.session_state["temp_role"] = data["role"]
+                st.session_state["temp_content"] = data["content"]
+                st.rerun()
+
+    # 保存当前提示词
+    save_name = st.text_input("保存名称", "default_prompt")
+    col_save, col_apply = st.columns(2)
+
+    with col_save:
+        if st.button("保存当前配置"):
+            prompt_data = {
+                "role": init_role,
+                "content": init_content
+            }
+            file_path = os.path.join(INIT_PROMPTS_DIR, f"{save_name}.json")
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(prompt_data, f, ensure_ascii=False, indent=2)
+            st.success(f"配置已保存到 {file_path}")
+
+    with col_apply:
+        if st.button("应用到对话", type="primary"):
+            # 更新历史记录中的第一条消息
+            st.session_state["history"][0] = {
+                "role": init_role,
+                "content": init_content,
+                "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S")
+            }
+            st.success("初始提示词已更新！")
+            st.rerun()
 
 # 显示聊天记录和思考过程
 for i, message in enumerate(st.session_state["history"]):
