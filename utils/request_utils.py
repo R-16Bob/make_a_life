@@ -4,7 +4,7 @@ import os
 import copy
 from datetime import datetime
 
-def get_chat_response(messages, model="Qwen3-8B", enable_search=False):
+def get_chat_response(messages, model="deepseek-R1-Distillation", enable_search=False):
     api_key = os.getenv("SILICONFLOW_API_KEY")
 
     print(messages)
@@ -71,7 +71,7 @@ def get_chat_response(messages, model="Qwen3-8B", enable_search=False):
     else:
         print(f"请求失败，状态码：{response.status_code}")
         print(f"错误信息：{response.text}")
-        return None, None
+        return None
 
 def get_clean_history(history):
     clean_history = []

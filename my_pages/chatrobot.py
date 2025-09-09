@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 # 添加用于管理初始提示词的目录
-INIT_PROMPTS_DIR = "../init_prompts"
+INIT_PROMPTS_DIR = "init_prompts"
 if not os.path.exists(INIT_PROMPTS_DIR):
     os.makedirs(INIT_PROMPTS_DIR)
 
@@ -132,7 +132,7 @@ def show():
 
     # 聊天组件
     prompt = st.chat_input("给AI发送消息")
-    model = st.selectbox("模型选择", ["Qwen3-8B", "deepseek-R1-Distillation"])
+    model = st.selectbox("模型选择", ["Qwen3-8B", "deepseek-R1-Distillation"], index=1)
     enable_search = st.toggle("联网搜索", value=False)
 
     if prompt:
