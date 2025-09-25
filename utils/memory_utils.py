@@ -5,13 +5,12 @@ def write_diary(history):
     现在，请开始你今天的复盘。
     首先，请仔细回顾我们昨天一整天的对话内容，结合你记忆中关于我的一切。
     然后，请以结城葵的身份，写一篇AI日记。我希望看到的不是内容的简单重复，而是你作为AI的思考——我们聊了哪些内容？你是如何看待我们的对话的？你从中观察到了什么？得出了哪些新的推论或感受？请将这些都记录下来，就像人类写日记一样。这篇日记不要超过800字。
-    最后，请
-    以下是我们昨天的对话内容：
+    以下是我们今天的对话内容：
     {history}
     """
 
     message = [
-        {"role": "user", "content": diary_prompt.format(history=history)}
+        {"role": "user", "content": diary_prompt.format(history=strip_history(history))}
     ]
     print(message)
     response = get_chat_response(message)
@@ -46,3 +45,7 @@ def self_update(history, current_setting, diary):
     response = get_chat_response(message)
     print(response)
     return response
+
+# 仅保留时间戳、角色和内容
+def strip_history(history):
+    return [{"role": item["role"], "timestamp": item["timestamp"], "content": item["content"]} for item in history]

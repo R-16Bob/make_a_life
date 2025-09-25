@@ -1,5 +1,8 @@
+import json
+
 from tavily import TavilyClient
 import os
+
 
 # 使用TavilySearch进行网上检索
 def tavily_search(query, max_results=2):
@@ -8,6 +11,40 @@ def tavily_search(query, max_results=2):
     print(response)
     return response
 
+def recall(query, max_results=2):
+    print(f"正在回忆{query}相关记忆...")
+    return None
+
+# 调用工具
+def call_tools(name,arguments):
+    allowed = {'tavily_search':tavily_search, 'recall':recall}
+    print(f"尝试调用工具：{name}，参数：{arguments}")
+    if name in allowed:
+        arguments = json.loads(arguments)
+        return allowed[name](**(arguments))
+    else:
+        raise ValueError(f"Unknown tool {name}")
+
+recall_tool = {
+    'type':'function',
+    'function':{
+        'name':'recall',
+        'description': '用于从历史记忆中检索相关内容，当需要回忆对话历史时调用',
+        'parameters':{
+            'type':'object',
+            'properties':{
+                'query':{
+                    'type':'str',
+                    'description':'检索内容，应该为关键词或者一句简短的话'
+                },
+                'max_results':{
+                    'type':'int',
+                    'description':"最大检索结果，为可选参数，默认为2。"
+                }
+            },
+            'required':['query']
+        }
+    }}
 # 我发现让LLM生成检索参数还不如直接用Prompt检索再让LLM根据检索内容生成回答，因此这个东西废弃了。
 tavily_tool = {
     'type':'function',
