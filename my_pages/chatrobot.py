@@ -3,6 +3,7 @@ import sys
 import os
 import json
 from datetime import datetime
+from utils.RAG_utils import RAG
 
 # 添加用于管理初始提示词的目录
 INIT_PROMPTS_DIR = "init_prompts"
@@ -14,7 +15,11 @@ from utils.request_utils import get_chat_response,get_clean_history
 
 def show():
     st.title("💬Make a life：ChatRobot")
+    # 初始化RAG
 
+    if "RAG" not in st.session_state:
+        with st.spinner("正在初始化记忆数据库..."):
+            st.session_state["RAG"] = RAG()
     # 初始化会话状态
     if "history" not in st.session_state:
         st.session_state["history"] = [{
@@ -136,6 +141,14 @@ def show():
     enable_search = st.toggle("联网搜索", value=False)
 
     if prompt:
+        # RAG判断
+        if any(keyword in prompt for keyword in ["记得","回忆"]):
+            recall_messages = [{"role": "user", "content": prompt}]
+            from utils.agent_utils import recall_tool
+            from utils.agent_utils import call_tools
+            response = get_chat_response(recall_messages, model='Qwen3-8B', tools=[recall_tool])
+            recall_results = call_tools(**response)
+            prompt = prompt+f"\n下面是你回忆的内容:\n{recall_results}"
         # 新增用户消息
         st.session_state["history"].append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)

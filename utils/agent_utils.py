@@ -13,7 +13,9 @@ def tavily_search(query, max_results=2):
 
 def recall(query, max_results=2):
     print(f"正在回忆{query}相关记忆...")
-    return None
+    import streamlit as st
+    results = st.session_state["RAG"].Faiss_search(query, max_results)
+    return results
 
 # 调用工具
 def call_tools(name,arguments):
@@ -39,7 +41,7 @@ recall_tool = {
                 },
                 'max_results':{
                     'type':'int',
-                    'description':"最大检索结果，为可选参数，默认为2。"
+                    'description':"最大检索结果，为可选参数，默认为3。"
                 }
             },
             'required':['query']
