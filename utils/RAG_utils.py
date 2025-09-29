@@ -9,15 +9,15 @@ def load_embedding_model():
     model_path = r"D:\AI_models\Qwen\Qwen3-Embedding-0___6B"
 
     # 设置模型参数，确保正确加载本地模型
-    model_kwargs = {
-        "device": "cpu",  # 根据设备情况选择使用 GPU 或 CPU
-        "trust_remote_code": True  # 允许加载远程代码
-    }
+    # model_kwargs = {
+    #     "device": "cpu",  # 根据设备情况选择使用 GPU 或 CPU
+    #     "trust_remote_code": True  # 允许加载远程代码
+    # }
 
     # 初始化 HuggingFaceEmbeddings
     embeddings_model = HuggingFaceEmbeddings(
         model_name=model_path,
-        model_kwargs=model_kwargs
+        # model_kwargs=model_kwargs
     )
     return embeddings_model
 
@@ -55,9 +55,9 @@ class RAG:
 
     def split_documents(self, documents):
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=400,
+            chunk_size=300,
             chunk_overlap=20,
-            separators=["}", ",", "\n\n", "\n", "。", "！", "？", "，", "、", ""]
+            separators=[",", "\n\n", "\n", "。", "！", "？", "，", "、", ""]
         )
         all_splits = text_splitter.split_documents(documents)
         return all_splits
@@ -69,6 +69,9 @@ class RAG:
 
     def Faiss_search(self, query, max_results=3):
         docs = self.retriever.invoke(query)
+        print(f"检索到{len(docs)}条记忆：")
+        print(docs)
+
         return [doc.page_content for doc in docs[:max_results]]
 
 if __name__ == "__main__":

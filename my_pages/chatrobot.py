@@ -146,12 +146,16 @@ def show():
             recall_messages = [{"role": "user", "content": prompt}]
             from utils.agent_utils import recall_tool
             from utils.agent_utils import call_tools
-            response = get_chat_response(recall_messages, model='Qwen3-8B', tools=[recall_tool])
-            recall_results = call_tools(**response)
-            prompt = prompt+f"\n下面是你回忆的内容:\n{recall_results}"
+            with st.spinner("AI正在回忆..."):
+                response = get_chat_response(recall_messages, model='Qwen3-8B', tools=[recall_tool])
+                recall_results = call_tools(**response)
+                recall_message = {"role": "user", "content": prompt+"\n你回忆到以下内容:"+"\n".join(recall_results)}
+            # # 新增RAG消息
+            # st.session_state["history"].append(recall_message)
+            # st.chat_message("user").write(recall_message["content"])
         # 新增用户消息
-        st.session_state["history"].append({"role": "user", "content": prompt})
-        st.chat_message("user").write(prompt)
+        st.session_state["history"].append(recall_message)
+        st.chat_message("user").write(recall_message["content"])
         # LLM推理
         with st.spinner("AI思考中..."):
             # AI回答
