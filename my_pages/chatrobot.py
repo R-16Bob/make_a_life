@@ -3,7 +3,7 @@ import sys
 import os
 import json
 from datetime import datetime
-from utils.RAG_utils import RAG
+from utils.db_utils import MilvusDB
 
 # 添加用于管理初始提示词的目录
 INIT_PROMPTS_DIR = "init_prompts"
@@ -17,9 +17,9 @@ def show():
     st.title("💬Make a life：ChatRobot")
     # 初始化RAG
 
-    if "RAG" not in st.session_state:
-        with st.spinner("正在初始化记忆数据库..."):
-            st.session_state["RAG"] = RAG()
+    if "db" not in st.session_state:
+        with st.spinner("正在连接记忆数据库..."):
+            st.session_state["db"] = MilvusDB()
     # 初始化会话状态
     if "history" not in st.session_state:
         st.session_state["history"] = [{
@@ -141,21 +141,21 @@ def show():
     enable_search = st.toggle("联网搜索", value=False)
 
     if prompt:
+        new_message = {"role": "user", "content": prompt}
         # RAG判断
         if any(keyword in prompt for keyword in ["记得","回忆"]):
-            recall_messages = [{"role": "user", "content": prompt}]
             from utils.agent_utils import recall_tool
             from utils.agent_utils import call_tools
             with st.spinner("AI正在回忆..."):
-                response = get_chat_response(recall_messages, model='Qwen3-8B', tools=[recall_tool])
-                recall_results = call_tools(**response)
-                recall_message = {"role": "user", "content": prompt+"\n你回忆到以下内容:"+"\n".join(recall_results)}
+                response = get_chat_response([new_message], model='Qwen3-8B', tools=[recall_tool])
+                results = call_tools(**response)
+                new_message = {"role": "user", "content": prompt+"\n你回忆到以下内容:"+"\n".join(results)}
             # # 新增RAG消息
             # st.session_state["history"].append(recall_message)
             # st.chat_message("user").write(recall_message["content"])
         # 新增用户消息
-        st.session_state["history"].append(recall_message)
-        st.chat_message("user").write(recall_message["content"])
+        st.session_state["history"].append(new_message)
+        st.chat_message("user").write(new_message["content"])
         # LLM推理
         with st.spinner("AI思考中..."):
             # AI回答

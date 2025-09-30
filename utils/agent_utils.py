@@ -11,10 +11,10 @@ def tavily_search(query, max_results=2):
     print(response)
     return response
 
-def recall(query, max_results=2):
+def recall(collection_name, query, max_results=3):
     print(f"正在回忆{query}相关记忆...")
     import streamlit as st
-    results = st.session_state["RAG"].Faiss_search(query, max_results)
+    results = st.session_state["db"].search_data(collection_name="diaries", query=[query], max_results=max_results)
     return results
 
 # 调用工具
@@ -35,6 +35,10 @@ recall_tool = {
         'parameters':{
             'type':'object',
             'properties':{
+                'collection_name':{
+                    'type':'str',
+                    'description':'记忆库名称，默认为"diaries"，即你的日记本'
+                },
                 'query':{
                     'type':'str',
                     'description':'检索内容，应该为关键词或者一句简短的话'
@@ -44,7 +48,7 @@ recall_tool = {
                     'description':"最大检索结果，为可选参数，默认为3。"
                 }
             },
-            'required':['query']
+            'required':['collection_name','query']
         }
     }}
 # 我发现让LLM生成检索参数还不如直接用Prompt检索再让LLM根据检索内容生成回答，因此这个东西废弃了。
