@@ -15,11 +15,17 @@ from utils.request_utils import get_chat_response,get_clean_history
 
 def show():
     st.title("💬Make a life：ChatRobot")
-    # 初始化RAG
-
-    if "db" not in st.session_state:
-        with st.spinner("正在连接记忆数据库..."):
-            st.session_state["db"] = MilvusDB()
+    # 检查是否需要初始化或重新连接数据库
+    if "db" not in st.session_state or st.session_state["db_connection_failed"]:
+        try:
+            with st.spinner("正在连接记忆数据库..."):
+                st.session_state["db"] = MilvusDB()
+                st.session_state["db_connection_failed"] = False
+                st.success("记忆数据库连接成功！")
+        except Exception as e:
+            st.session_state["db"] = None
+            st.session_state["db_connection_failed"] = True
+            st.error(f"连接记忆数据库失败！")
     # 初始化会话状态
     if "history" not in st.session_state:
         st.session_state["history"] = [{
@@ -29,6 +35,16 @@ def show():
 
     # 新增：配置初始提示词侧边栏
     with st.sidebar:
+        # 添加数据库连接状态和手动重连按钮
+        st.divider()
+        st.subheader("数据库连接状态")
+        if st.session_state.get("db") is not None and not st.session_state.get("db_connection_failed", False):
+            st.success("✅ 数据库已连接")
+        else:
+            st.error("❌ 数据库连接失败")
+            if st.button("手动连接记忆数据库", type="primary"):
+                st.session_state["db_connection_failed"] = True  # 触发重新连接
+                st.rerun()
         st.header("初始提示词设置")
         # 加载并立即清理临时状态
         # temp_role = st.session_state.get("temp_role", None)

@@ -17,6 +17,18 @@ def write_diary(history):
     print(response)
     return response
 
+# 将日记内容插入数据库
+def save_diary(db,diary_content):
+    data = []
+    from utils.RAG_utils import split_content
+    splits = split_content(diary_content["content"])
+    for split in splits:
+        data.append({"timestamp": int(diary_content["timestamp"]), "text": split.page_content})
+    res = db.insert_data(collection_name="diaries", data=data)
+    print(res)
+
+
+
 def self_update(history, current_setting, diary):
     self_update_prompt = """
     现在，请开始你的自我更新。请根据你昨天写的日记，更新你的设定与想要记住的事。注意：
@@ -48,4 +60,10 @@ def self_update(history, current_setting, diary):
 
 # 仅保留时间戳、角色和内容
 def strip_history(history):
-    return [{"role": item["role"], "timestamp": item["timestamp"], "content": item["content"]} for item in history]
+    result = []
+    for item in history:
+        if 'timestamp' not in item:
+            result.append({"role": item["role"],  "content": item["content"]})
+        else:
+            result.append({"role": item["role"], "timestamp": item["timestamp"], "content": item["content"]})
+    return result

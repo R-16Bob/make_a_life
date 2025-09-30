@@ -70,7 +70,7 @@ def read_diary(diary_path):
         # 解析JSON字符串
         diary_data = json.loads(content)
         timestamp = int(diary_data["timestamp"])
-        content = Document(page_content=diary_data["content"], metadata={})
+        # content = Document(page_content=diary_data["content"], metadata={})
     return {"timestamp": timestamp, "content": content}
 def load_all_diaries():
     diary_files = get_diary_path()
@@ -88,7 +88,7 @@ def split_content(content):
         chunk_overlap=20,
         separators=[",", "\n\n", "\n", "。", "！", "？", "，", "、", ""]
     )
-    all_splits = text_splitter.split_documents([content])
+    all_splits = text_splitter.split_documents([Document(page_content=content,metadata={})])
     return all_splits
 
 if __name__ == "__main__":
