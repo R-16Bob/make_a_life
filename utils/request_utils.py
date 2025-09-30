@@ -4,7 +4,7 @@ import os
 import copy
 from datetime import datetime
 
-def get_chat_response(messages, model="deepseek-R1-Distillation", enable_search=False):
+def get_chat_response(messages, model="deepseek-R1-Distillation", enable_search=False, tools=None):
     api_key = os.getenv("SILICONFLOW_API_KEY")
 
     print(messages)
@@ -38,6 +38,8 @@ def get_chat_response(messages, model="deepseek-R1-Distillation", enable_search=
             "messages": messages,
             "temperature": 0.5
         }
+    if tools:
+        data["tools"]=tools
     # 发送POST请求
     response = requests.post(url, headers=headers, data=json.dumps(data))
 
@@ -46,6 +48,7 @@ def get_chat_response(messages, model="deepseek-R1-Distillation", enable_search=
         # 生成时间戳
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         result = response.json()
+        print(result)
         reasoning_content = result['choices'][0]['message']['reasoning_content']
 
         content = result['choices'][0]['message']['content']
@@ -67,6 +70,9 @@ def get_chat_response(messages, model="deepseek-R1-Distillation", enable_search=
         }
         if enable_search:
             return_dict["search_results"] = search_resutls
+        elif tools:
+            functon_calls = result['choices'][0]['message']['tool_calls'][0]["function"]
+            return functon_calls
         return return_dict
     else:
         print(f"请求失败，状态码：{response.status_code}")
@@ -78,3 +84,13 @@ def get_clean_history(history):
     for message in history:
         clean_history.append({'role':message["role"],'content':message["content"]})
     return clean_history
+
+if __name__=='__main__':
+    messages = [{"role": "user", "content": "你还记得上次我说的爱丽丝与A的故事吗？"}]
+    from utils.agent_utils import recall_tool
+    from utils.agent_utils import call_tools
+    response = get_chat_response(messages,model='Qwen3-8B', tools=[recall_tool])
+    # response = get_chat_response(messages, model='Qwen3-8B')
+    print(response)
+    call_tools(**response)
+

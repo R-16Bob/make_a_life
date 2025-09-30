@@ -67,14 +67,21 @@ def show():
             base_filename = os.path.splitext(st.session_state["imported_filename"])[0]
             diary_filename = f"diary_{base_filename}.txt"
 
-            # 修改：导出日记内容为纯文本，并使用匹配的文件名
-            if st.download_button(
-                label="导出日记",
-                data=json.dumps(st.session_state["diary_content"], ensure_ascii=False, indent=2),
-                file_name=diary_filename,
-                mime="text/plain"
-            ):
-                st.success("日记导出成功！")
+            col_export, col_save = st.columns(2)
+            # 导出日记内容为纯文本，并使用匹配的文件名
+            with col_export:
+                if st.download_button(
+                    label="导出日记",
+                    data=json.dumps(st.session_state["diary_content"], ensure_ascii=False, indent=2),
+                    file_name=diary_filename,
+                    mime="text/plain"
+                ):
+                    st.success("日记导出成功！")
+            with col_save:
+                if st.button("存储到记忆库"):
+                    # 调用memory_utils.save_diary保存日记
+                    memory_utils.save_diary(st.session_state["db"], st.session_state["diary_content"])
+                    st.success("日记保存成功！")
 
     # 新增：AI自我更新功能
     st.subheader("AI自我更新")
@@ -129,5 +136,5 @@ def show():
 
     else:
         # 修改：提示信息更新为需要上传文件
-        st.info("请先上传并导入对话历史文件以生成日记")
+        st.info("请先上传设定json文件！")
 

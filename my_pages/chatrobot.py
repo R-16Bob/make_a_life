@@ -3,6 +3,7 @@ import sys
 import os
 import json
 from datetime import datetime
+from utils.db_utils import MilvusDB
 
 # 添加用于管理初始提示词的目录
 INIT_PROMPTS_DIR = "init_prompts"
@@ -14,7 +15,17 @@ from utils.request_utils import get_chat_response,get_clean_history
 
 def show():
     st.title("💬Make a life：ChatRobot")
-
+    # 检查是否需要初始化或重新连接数据库
+    if "db" not in st.session_state or st.session_state["db_connection_failed"]:
+        try:
+            with st.spinner("正在连接记忆数据库..."):
+                st.session_state["db"] = MilvusDB()
+                st.session_state["db_connection_failed"] = False
+                st.success("记忆数据库连接成功！")
+        except Exception as e:
+            st.session_state["db"] = None
+            st.session_state["db_connection_failed"] = True
+            st.error(f"连接记忆数据库失败！")
     # 初始化会话状态
     if "history" not in st.session_state:
         st.session_state["history"] = [{
@@ -24,6 +35,16 @@ def show():
 
     # 新增：配置初始提示词侧边栏
     with st.sidebar:
+        # 添加数据库连接状态和手动重连按钮
+        st.divider()
+        st.subheader("数据库连接状态")
+        if st.session_state.get("db") is not None and not st.session_state.get("db_connection_failed", False):
+            st.success("✅ 数据库已连接")
+        else:
+            st.error("❌ 数据库连接失败")
+            if st.button("重新连接记忆数据库", type="primary"):
+                st.session_state["db_connection_failed"] = True  # 触发重新连接
+                st.rerun()
         st.header("初始提示词设置")
         # 加载并立即清理临时状态
         # temp_role = st.session_state.get("temp_role", None)
@@ -136,9 +157,21 @@ def show():
     enable_search = st.toggle("联网搜索", value=False)
 
     if prompt:
+        new_message = {"role": "user", "content": prompt}
+        # RAG判断
+        if any(keyword in prompt for keyword in ["记得","回忆"]):
+            from utils.agent_utils import recall_tool
+            from utils.agent_utils import call_tools
+            with st.spinner("AI正在回忆..."):
+                response = get_chat_response([new_message], model='Qwen3-8B', tools=[recall_tool])
+                results = call_tools(**response)
+                new_message = {"role": "user", "content": prompt+"\n你回忆到以下内容:"+"\n".join(results)}
+            # # 新增RAG消息
+            # st.session_state["history"].append(recall_message)
+            # st.chat_message("user").write(recall_message["content"])
         # 新增用户消息
-        st.session_state["history"].append({"role": "user", "content": prompt})
-        st.chat_message("user").write(prompt)
+        st.session_state["history"].append(new_message)
+        st.chat_message("user").write(new_message["content"])
         # LLM推理
         with st.spinner("AI思考中..."):
             # AI回答
