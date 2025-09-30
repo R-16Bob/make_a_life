@@ -42,7 +42,7 @@ def show():
             st.success("✅ 数据库已连接")
         else:
             st.error("❌ 数据库连接失败")
-            if st.button("手动连接记忆数据库", type="primary"):
+            if st.button("重新连接记忆数据库", type="primary"):
                 st.session_state["db_connection_failed"] = True  # 触发重新连接
                 st.rerun()
         st.header("初始提示词设置")
